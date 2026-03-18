@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { signIn } from "@/lib/auth";
 
 export default function Home() {
   return (
@@ -17,7 +18,14 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">Features</a>
             <a href="#pricing" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">Pricing</a>
-            <Button variant="outline" size="sm">Sign In</Button>
+            <form
+              action={async () => {
+                "use server"
+                await signIn("github", { redirectTo: "/dashboard" })
+              }}
+            >
+              <Button variant="outline" size="sm" type="submit">Sign In</Button>
+            </form>
           </nav>
         </div>
       </header>
@@ -34,9 +42,16 @@ export default function Home() {
               Get actionable insights to improve your chances of being featured in AI answers.
             </p>
             <div className="mt-10 flex justify-center gap-4">
-              <Button size="lg" className="bg-violet-600 hover:bg-violet-700">
-                Start Free Trial
-              </Button>
+              <form
+                action={async () => {
+                  "use server"
+                  await signIn("github", { redirectTo: "/dashboard" })
+                }}
+              >
+                <Button size="lg" className="bg-violet-600 hover:bg-violet-700" type="submit">
+                  Start Free Trial
+                </Button>
+              </form>
               <Button size="lg" variant="outline">
                 See Demo
               </Button>
@@ -62,12 +77,13 @@ export default function Home() {
                   <Label htmlFor="content">Your Content</Label>
                   <Textarea 
                     id="content" 
-                    placeholder="Paste your article, blog post, or webpage content here..." 
+                    placeholder="Sign in to analyze your content..." 
                     className="min-h-[200px]"
+                    disabled
                   />
                 </div>
-                <Button className="w-full bg-violet-600 hover:bg-violet-700">
-                  Analyze Content
+                <Button className="w-full bg-violet-600 hover:bg-violet-700" disabled>
+                  Sign In to Analyze
                 </Button>
               </CardContent>
             </Card>
@@ -171,7 +187,14 @@ export default function Home() {
                     <li className="flex items-center gap-2">✓ Basic AEO score</li>
                     <li className="flex items-center gap-2">✓ Email support</li>
                   </ul>
-                  <Button className="mt-6 w-full" variant="outline">Get Started</Button>
+                  <form
+                    action={async () => {
+                      "use server"
+                      await signIn("github", { redirectTo: "/dashboard" })
+                    }}
+                  >
+                    <Button className="mt-6 w-full" variant="outline" type="submit">Get Started</Button>
+                  </form>
                 </CardContent>
               </Card>
               <Card className="border-violet-500 border-2">
@@ -187,7 +210,7 @@ export default function Home() {
                     <li className="flex items-center gap-2">✓ AI visibility tracking</li>
                     <li className="flex items-center gap-2">✓ Priority support</li>
                   </ul>
-                  <Button className="mt-6 w-full bg-violet-600 hover:bg-violet-700">Start Free Trial</Button>
+                  <Button className="mt-6 w-full bg-violet-600 hover:bg-violet-700">Coming Soon</Button>
                 </CardContent>
               </Card>
             </div>
