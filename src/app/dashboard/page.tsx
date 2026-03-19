@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { signOut } from "next-auth/react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,12 +21,21 @@ interface Analysis {
   analyzedAt: string
 }
 
+interface Usage {
+  used: number
+  limit: number
+  remaining: number
+  tier: string
+  isPro: boolean
+}
+
 export default function Dashboard() {
   const [content, setContent] = useState("")
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [error, setError] = useState("")
+  const [usage, setUsage] = useState<Usage | null>(null)
 
   const handleAnalyze = async () => {
     if (!content || content.length < 100) {
@@ -47,11 +57,16 @@ export default function Dashboard() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Analysis failed")
+        if (res.status === 429) {
+          setError(data.message || "Daily limit reached")
+        } else {
+          setError(data.error || "Analysis failed")
+        }
         return
       }
 
       setAnalysis(data.analysis)
+      setUsage(data.usage)
     } catch {
       setError("Failed to analyze content")
     } finally {
@@ -59,11 +74,17 @@ export default function Dashboard() {
     }
   }
 
+  const handleExport = async (format: "csv" | "json") => {
+    window.open(`/api/export?format=${format}`, "_blank")
+  }
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600"
     if (score >= 60) return "text-amber-600"
     return "text-red-600"
   }
+
+  const isPro = usage?.isPro || false
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white">
@@ -74,7 +95,19 @@ export default function Dashboard() {
             <span className="text-xl font-bold">AEO.ai</span>
           </div>
           <div className="flex items-center gap-4">
-            <Badge variant="outline">Free Plan</Badge>
+            <Link href="/history">
+              <Button variant="ghost" size="sm">History</Button>
+            </Link>
+            {!isPro && (
+              <Link href="/upgrade">
+                <Button variant="ghost" size="sm" className="text-violet-600">
+                  Upgrade to Pro
+                </Button>
+              </Link>
+            )}
+            <Badge className={isPro ? "bg-violet-100 text-violet-700" : ""}>
+              {usage?.tier || "free"} Plan
+            </Badge>
             <Button variant="outline" size="sm" onClick={() => signOut()}>
               Sign Out
             </Button>
@@ -83,10 +116,27 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold">AI Content Analyzer</h1>
-        <p className="mt-2 text-zinc-600">
-          Optimize your content for AI search engines like ChatGPT, Perplexity, and Claude
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">AI Content Analyzer</h1>
+            <p className="mt-2 text-zinc-600">
+              Optimize your content for AI search engines like ChatGPT, Perplexity, and Claude
+            </p>
+          </div>
+          {usage && (
+            <div className="text-right">
+              <p className="text-sm text-zinc-500">Analyses remaining today</p>
+              <p className="text-2xl font-bold">
+                {isPro ? "∞" : usage.remaining} / {usage.limit}
+              </p>
+              {!isPro && (
+                <Link href="/upgrade" className="text-xs text-violet-600 hover:underline">
+                  Get unlimited →
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <Card>
@@ -137,12 +187,22 @@ export default function Dashboard() {
               <>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-center text-4xl font-bold">
-                      <span className={getScoreColor(analysis.aeoScore)}>
-                        {analysis.aeoScore}
-                      </span>
-                      <span className="text-2xl text-zinc-400">/100</span>
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-center text-4xl font-bold">
+                        <span className={getScoreColor(analysis.aeoScore)}>
+                          {analysis.aeoScore}
+                        </span>
+                        <span className="text-2xl text-zinc-400">/100</span>
+                      </CardTitle>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+                          Export CSV
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleExport("json")}>
+                          Export JSON
+                        </Button>
+                      </div>
+                    </div>
                     <CardDescription className="text-center">
                       Overall AEO Score
                     </CardDescription>
