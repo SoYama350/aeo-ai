@@ -3,9 +3,12 @@ import { NextResponse } from "next/server"
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth
-  const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard")
+  const pathname = req.nextUrl.pathname
 
-  if (isOnDashboard && !isLoggedIn) {
+  const protectedPaths = ["/dashboard", "/history", "/upgrade"]
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
+
+  if (isProtectedPath && !isLoggedIn) {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin))
   }
 
@@ -13,5 +16,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/history/:path*", "/upgrade/:path*"],
 }
